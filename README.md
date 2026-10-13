@@ -79,30 +79,33 @@ All keys are optional.
 | `max_inline_comments` | `15` | Cap on inline comments |
 | `max_tokens` | `4096` | Max output tokens per request |
 
-## What it catches
+## What it catches (live demo PRs)
 
-[`demo-app/`](demo-app/) is a tiny, intentionally vulnerable notes service. [`examples/scenarios/`](examples/scenarios/) has three PRs against it:
+[`demo-app/`](demo-app/) is a tiny, intentionally vulnerable notes service. These PRs stay open permanently as a showcase. They are reviewed by this repo's own gate ([`.github/workflows/pr-gate.yml`](.github/workflows/pr-gate.yml)) using `claude-sonnet-5-5`:
 
-| PR | Result |
-|---|---|
-| SQL injection in a new `/search` endpoint, plus a debug `print` | ❌ FAIL (critical SQL injection; custom rules `sql-params` and `no-print-debug`) |
-| Adds `.env`, a hardcoded AWS key, `subprocess(..., shell=True)` with user input, and a PNG | ❌ FAIL (command injection). `.env` and the PNG are not sent, and the AWS key is redacted |
-| Small safe refactor | ✅ PASS |
+| Demo PR | Result | Tokens (in / out) | Real cost |
+|---|---|---|---|
+| [#1 SQL injection in a new `/search` endpoint plus a debug `print`](https://github.com/jbrianfrancis/claude-pr-gate/pull/1) | ❌ FAIL: high `sql-params` SQL injection, low `no-print-debug` | 669 / 483 | ≈$0.006 |
+| [#2 `.env`, hardcoded AWS key, `shell=True`, and a PNG](https://github.com/jbrianfrancis/claude-pr-gate/pull/2) | ❌ FAIL: critical command injection, high hardcoded credential. `.env` and the PNG were not sent, and the AWS key was redacted | 604 / 707 | ≈$0.008 |
+| [#3 Small safe refactor](https://github.com/jbrianfrancis/claude-pr-gate/pull/3) | ✅ PASS | 585 / 10 | ≈$0.001 |
 
-See [sample-fail-comment.md](examples/scenarios/sample-fail-comment.md) for what the PR comment looks like.
+All credentials in the demo PRs are fake. The real PR #1 comment is saved in [sample-fail-comment.md](examples/scenarios/sample-fail-comment.md). The diffs are also in [`examples/scenarios/`](examples/scenarios/) for local runs.
+
+Honest note: on PR #1 the model also raised a medium "possible missing `request` import". The import exists, but it is outside the diff context the model sees. Findings below your `fail_on` level are advisory and never block.
 
 ## Cost per PR
 
-You pay Anthropic directly at standard API prices. Each PR comment shows its token count and estimated cost.
-Estimate for Sonnet ($3 per million input tokens, $15 per million output):
+You pay Anthropic directly at standard API prices. Every PR comment shows its own token count and cost.
+**Measured:** the demo PRs above cost **$0.001 to $0.008 each** on `claude-sonnet-5-5` ($2 per million input tokens, $10 per million output).
+Estimates for bigger PRs (≈4 chars per token, plus ~550 prompt tokens per request):
 
-| PR size | Diff tokens (≈4 chars/token) + ~700 prompt | Output | ≈ Cost |
+| PR size | Input | Output | ≈ Cost |
 |---|---|---|---|
-| Small (~100 changed lines, ~5 KB) | ~2K in | ~400 | **~$0.01** |
-| Typical (~300 lines, ~15 KB) | ~5K in | ~800 | **~$0.03** |
-| Large, hits the 120 KB cap (3 chunks) | ~32K in | ~3K | **~$0.15 max** |
+| Small (~100 changed lines, ~5 KB) | ~2K | ~500 | **~$0.01** |
+| Typical (~300 lines, ~15 KB) | ~5K | ~800 | **~$0.02** |
+| Large, hits the 120 KB cap (3 chunks) | ~32K | ~3K | **~$0.10 max** |
 
-A team opening 200 PRs a month with about 3 pushes each spends roughly **$10–20 a month**. Set `model: claude-haiku-4-5` for about a third of that. These are estimates, so check current pricing.
+A team opening 200 PRs a month with about 3 pushes each spends roughly **$5–15 a month**. Prices as of Oct 2026, so check current pricing.
 
 ## Data handling
 
