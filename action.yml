@@ -1,5 +1,5 @@
 name: AI PR Gate
-description: AI code review for every PR, powered by Claude. Flags security and quality issues, comments inline, and sets a PASS/FAIL check.
+description: AI code review for every PR, powered by Claude. Flags security and quality issues inline and sets a PASS/FAIL check.
 author: Brian Francis
 branding:
   icon: shield
