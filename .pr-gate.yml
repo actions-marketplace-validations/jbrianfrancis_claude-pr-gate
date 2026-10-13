@@ -1,5 +1,5 @@
 # Example rules file. Every key is optional; see README "Config reference".
-model: claude-sonnet-4-5
+model: claude-sonnet-5-5
 fail_on: high              # info | low | medium | high | critical | none
 max_findings:
   medium: 5                # also fail if more than 5 medium findings

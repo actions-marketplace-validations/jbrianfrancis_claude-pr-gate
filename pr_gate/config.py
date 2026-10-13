@@ -11,7 +11,7 @@ import yaml
 SEVERITIES = ["info", "low", "medium", "high", "critical"]
 
 DEFAULTS: dict[str, Any] = {
-    "model": "claude-sonnet-4-5",
+    "model": "claude-sonnet-5-5",
     "max_tokens": 4096,
     "fail_on": "high",            # lowest severity that fails the gate
     "max_findings": {},           # e.g. {"medium": 5}: fail if more than 5 medium findings

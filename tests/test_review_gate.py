@@ -50,6 +50,7 @@ def test_decide_max_findings():
 def test_cost():
     assert estimate_cost("claude-sonnet-4-5", Usage(1_000_000, 100_000)) == pytest.approx(4.5)
     assert estimate_cost("claude-haiku-4-5", Usage(1_000_000, 0)) == pytest.approx(1.0)
+    assert estimate_cost("claude-sonnet-5-5", Usage(1_000_000, 100_000)) == pytest.approx(3.0)
 
 
 def test_summary_escapes_pipes():

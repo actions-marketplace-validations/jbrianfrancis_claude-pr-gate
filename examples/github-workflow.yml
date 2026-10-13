@@ -17,4 +17,4 @@ jobs:
       - uses: jbrianfrancis/claude-pr-gate@v1
         with:
           anthropic-api-key: ${{ secrets.ANTHROPIC_API_KEY }}
-          # model: claude-sonnet-4-5
+          # model: claude-sonnet-5-5

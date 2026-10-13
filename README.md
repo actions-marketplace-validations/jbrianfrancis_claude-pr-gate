@@ -65,7 +65,7 @@ All keys are optional.
 
 | Key | Default | Meaning |
 |---|---|---|
-| `model` | `claude-sonnet-4-5` | Anthropic model id. The action input `model` or env `PR_GATE_MODEL` overrides it |
+| `model` | `claude-sonnet-5-5` | Anthropic model id. The action input `model` or env `PR_GATE_MODEL` overrides it |
 | `fail_on` | `high` | Lowest severity that fails the gate: `info` `low` `medium` `high` `critical`, or `none` |
 | `max_findings` | `{}` | Per-severity count limits, e.g. `{medium: 5}` fails on the 6th medium |
 | `on_error` | `open` | If the gate itself errors: `open` passes (and says so), `closed` fails |

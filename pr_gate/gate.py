@@ -9,7 +9,9 @@ from .review import Finding, Usage
 MARKER = "<!-- claude-pr-gate -->"
 ICON = {"critical": "🛑", "high": "🔴", "medium": "🟠", "low": "🟡", "info": "🔵"}
 # USD per million tokens (input, output). Update when pricing changes.
-PRICES = {"sonnet": (3.0, 15.0), "haiku": (1.0, 5.0), "opus": (15.0, 75.0)}
+# Most specific prefix wins. Source: Anthropic pricing page, Oct 2026.
+PRICES = {"sonnet-5": (2.0, 10.0), "opus-5": (4.0, 20.0),
+          "sonnet": (3.0, 15.0), "haiku": (1.0, 5.0), "opus": (15.0, 75.0)}
 
 
 def rank(sev: str) -> int:
@@ -30,7 +32,7 @@ def decide(cfg: Config, findings: list[Finding]) -> tuple[bool, list[str]]:
 
 
 def estimate_cost(model: str, usage: Usage) -> float:
-    family = next((k for k in PRICES if k in model), "sonnet")
+    family = next((k for k in PRICES if k in model), "sonnet-5")
     pin, pout = PRICES[family]
     return usage.input_tokens / 1e6 * pin + usage.output_tokens / 1e6 * pout
 
