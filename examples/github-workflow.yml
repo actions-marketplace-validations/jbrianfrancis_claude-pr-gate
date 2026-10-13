@@ -14,7 +14,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4   # needed so the action can read .pr-gate.yml
-      - uses: jbrianfrancis/claude-pr-gate@v1
+      - uses: jbrianfrancis/claude-pr-gate@v1.1
         with:
           anthropic-api-key: ${{ secrets.ANTHROPIC_API_KEY }}
           # model: claude-sonnet-5-5
