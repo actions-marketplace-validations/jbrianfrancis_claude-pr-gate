@@ -1,4 +1,6 @@
-# claude-pr-gate
+# AI PR Gate
+
+*Powered by Claude* · `uses: jbrianfrancis/claude-pr-gate@v1.3`
 
 **An AI reviewer that blocks risky pull requests before a human has to.**
 Every PR gets a quality and security review from Claude, one summary comment, inline notes on the exact lines, and a PASS/FAIL status you can make a required check. Works on **GitHub Actions** and **Bitbucket Pipelines** with the same core script.
@@ -38,7 +40,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - uses: jbrianfrancis/claude-pr-gate@v1.1
+      - uses: jbrianfrancis/claude-pr-gate@v1.3
         with:
           anthropic-api-key: ${{ secrets.ANTHROPIC_API_KEY }}
 ```
