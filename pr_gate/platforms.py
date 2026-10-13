@@ -83,7 +83,7 @@ class GitHub:
                      "body": f"**{f.severity.upper()}** · {f.category}: **{f.title}**\n\n{f.detail}"}
                     for f in findings]
         http("POST", f"{self.api}/repos/{self.repo}/pulls/{self.pr}/reviews", self.h,
-             {"commit_id": self.sha, "event": "COMMENT", "body": "Claude PR Gate inline findings", "comments": comments})
+             {"commit_id": self.sha, "event": "COMMENT", "body": "AI PR Gate inline findings", "comments": comments})
 
     def set_status(self, passed: bool, description: str) -> None:
         http("POST", f"{self.api}/repos/{self.repo}/statuses/{self.sha}", self.h,
@@ -120,5 +120,5 @@ class Bitbucket:
     def set_status(self, passed: bool, description: str) -> None:
         http("POST", f"{self.base}/commit/{self.sha}/statuses/build", self.h,
              {"state": "SUCCESSFUL" if passed else "FAILED", "key": "claude-pr-gate",
-              "name": "Claude PR Gate", "description": description[:140],
+              "name": "AI PR Gate", "description": description[:140],
               "url": os.environ.get("BITBUCKET_GIT_HTTP_ORIGIN", "https://bitbucket.org")})

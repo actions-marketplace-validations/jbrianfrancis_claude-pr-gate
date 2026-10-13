@@ -6,7 +6,7 @@ pipelines:
   pull-requests:
     '**':
       - step:
-          name: Claude PR Gate
+          name: AI PR Gate
           clone: { depth: full }
           script:
             - apt-get update -qq && apt-get install -y -qq git > /dev/null

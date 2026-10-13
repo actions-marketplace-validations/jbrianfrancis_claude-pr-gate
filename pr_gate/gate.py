@@ -42,7 +42,7 @@ def render_summary(cfg: Config, passed: bool, reasons: list[str], findings: list
                    redactions: int = 0, error: str | None = None) -> str:
     lines = [MARKER]
     status = "✅ PASS" if passed else "❌ FAIL"
-    lines.append(f"## Claude PR Gate: {status}")
+    lines.append(f"## AI PR Gate: {status}")
     if error:
         lines.append(f"\n> ⚠️ The gate could not complete: `{error}`. Policy `on_error: {cfg.on_error}` "
                      f"→ {'passing (fail-open)' if passed else 'failing (fail-closed)'}.")
