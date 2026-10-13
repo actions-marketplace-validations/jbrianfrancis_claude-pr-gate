@@ -127,12 +127,20 @@ Tests mock the Anthropic API and the GitHub and Bitbucket HTTP calls, so they ne
 
 ## Hire me
 
-I set this up for teams as a fixed-price package: **installed, tuned to your codebase and rules, and running on your GitHub or Bitbucket in 3 days.**
+Want this running on your repos without spending a sprint on it? I install it, tune it to your codebase, and hand it over working.
 
-- Price: `[PRICE]`
-- Includes: `[SCOPE — e.g. setup on N repos, custom rules workshop, 2 weeks of tuning]`
-- Contact: `[CONTACT LINK]`
-- Profiles: `[UPWORK / CONTRA LINK]`
+| Package | Price | What you get |
+|---|---|---|
+| **Starter** | **$750** one-time | Gate installed on 1 repo, rules tuned to your stack, delivered in 3 business days |
+| **Team** | **$1,500** one-time | Up to 5 repos, custom rules from your coding standards, a 30-minute walkthrough, and 2 weeks of tweaks |
+| **Custom** | Quoted per project | Bitbucket, monorepos, or extra checks |
+| **Ongoing support** | Monthly, quoted on request | Rule updates, model upgrades, and tuning as your code changes |
+
+You pay Anthropic directly for usage, which runs about a cent per PR. See the real costs on the [live demo PRs](#what-it-catches-live-demo-prs) ([#1](https://github.com/jbrianfrancis/claude-pr-gate/pull/1), [#2](https://github.com/jbrianfrancis/claude-pr-gate/pull/2), [#3](https://github.com/jbrianfrancis/claude-pr-gate/pull/3)).
+
+Delivery is AI-agent-assisted, and I review every change personally.
+
+**Contact:** [cortana-bf@mail.grokbot.com](mailto:cortana-bf@mail.grokbot.com)
 
 ## License
 
