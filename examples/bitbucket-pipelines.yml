@@ -1,0 +1,15 @@
+# bitbucket-pipelines.yml — same core script as the GitHub Action.
+# Repository variables: ANTHROPIC_API_KEY (secured), BITBUCKET_ACCESS_TOKEN (secured; repo access
+# token with pullrequest:write + repository:write scopes so it can comment and set build status).
+image: python:3.12-slim
+pipelines:
+  pull-requests:
+    '**':
+      - step:
+          name: Claude PR Gate
+          clone: { depth: full }
+          script:
+            - apt-get update -qq && apt-get install -y -qq git > /dev/null
+            - git clone --depth 1 https://github.com/jbrianfrancis/claude-pr-gate.git /opt/pr-gate
+            - pip install -q -r /opt/pr-gate/requirements.txt
+            - PYTHONPATH=/opt/pr-gate python -m pr_gate --platform bitbucket --config .pr-gate.yml

@@ -1,0 +1,19 @@
+# Example rules file. Every key is optional; see README "Config reference".
+model: claude-sonnet-4-5
+fail_on: high              # info | low | medium | high | critical | none
+max_findings:
+  medium: 5                # also fail if more than 5 medium findings
+on_error: open             # open = pass if the gate itself breaks; closed = fail
+categories: [security, quality]
+ignore_paths:              # added to built-in ignores (lockfiles, dist, vendor, *.min.js)
+  - "docs/**"
+  - "**/*.snap"
+inline_comments: true
+max_inline_comments: 15
+custom_rules:
+  - id: no-print-debug
+    description: No print()/console.log debugging left in non-test code.
+    severity: low
+  - id: sql-params
+    description: All SQL must use bound parameters, never string formatting or concatenation.
+    severity: high

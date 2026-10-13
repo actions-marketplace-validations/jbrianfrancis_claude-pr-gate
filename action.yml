@@ -1,0 +1,33 @@
+name: Claude PR Gate
+description: LLM-powered quality and security gate for pull requests, using the Anthropic API.
+branding: { icon: shield, color: orange }
+inputs:
+  anthropic-api-key:
+    description: Anthropic API key (pass secrets.ANTHROPIC_API_KEY)
+    required: true
+  model:
+    description: Model id. Overrides .pr-gate.yml.
+    required: false
+    default: ""
+  config:
+    description: Path to the rules file
+    required: false
+    default: .pr-gate.yml
+  github-token:
+    description: Token used to read the diff, comment, and set the status
+    required: false
+    default: ${{ github.token }}
+runs:
+  using: composite
+  steps:
+    - uses: actions/setup-python@v5
+      with: { python-version: "3.12" }
+    - shell: bash
+      run: pip install -q -r "${{ github.action_path }}/requirements.txt"
+    - shell: bash
+      env:
+        ANTHROPIC_API_KEY: ${{ inputs.anthropic-api-key }}
+        GITHUB_TOKEN: ${{ inputs.github-token }}
+        PR_GATE_MODEL: ${{ inputs.model }}
+        PYTHONPATH: ${{ github.action_path }}
+      run: python -m pr_gate --platform github --config "${{ inputs.config }}"

@@ -1,0 +1,20 @@
+# Copy to .github/workflows/pr-gate.yml in the repo you want gated.
+name: pr-gate
+on:
+  pull_request:
+    types: [opened, synchronize, reopened]
+permissions:
+  contents: read
+  pull-requests: write   # summary + inline comments
+  statuses: write        # PASS/FAIL commit status
+jobs:
+  gate:
+    # Forked PRs don't receive secrets; skip them instead of failing.
+    if: github.event.pull_request.head.repo.full_name == github.repository
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4   # needed so the action can read .pr-gate.yml
+      - uses: jbrianfrancis/claude-pr-gate@v1
+        with:
+          anthropic-api-key: ${{ secrets.ANTHROPIC_API_KEY }}
+          # model: claude-sonnet-4-5
