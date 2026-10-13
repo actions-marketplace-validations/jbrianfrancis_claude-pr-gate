@@ -1,6 +1,9 @@
 name: Claude PR Gate
-description: LLM-powered quality and security gate for pull requests, using the Anthropic API.
-branding: { icon: shield, color: orange }
+description: AI code review for every PR. Claude flags security and quality issues, comments inline, and sets a PASS/FAIL check.
+author: Brian Francis
+branding:
+  icon: shield
+  color: orange
 inputs:
   anthropic-api-key:
     description: Anthropic API key (pass secrets.ANTHROPIC_API_KEY)
