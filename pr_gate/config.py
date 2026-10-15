@@ -15,13 +15,14 @@ DEFAULTS: dict[str, Any] = {
     "max_tokens": 4096,
     "fail_on": "high",            # lowest severity that fails the gate
     "max_findings": {},           # e.g. {"medium": 5}: fail if more than 5 medium findings
-    "on_error": "open",           # "open" = pass if the gate itself errors; "closed" = fail
+    "on_error": "closed",         # "closed" = fail if the gate itself errors; "open" = pass
     "categories": ["security", "quality"],
     "ignore_paths": ["**/*.lock", "**/package-lock.json", "**/dist/**", "**/vendor/**", "**/*.min.js"],
     "secret_paths": ["**/.env", "**/.env.*", "**/*.pem", "**/*.key", "**/id_rsa*",
                      "**/*.p12", "**/*.pfx", "**/credentials*", "**/secrets*.y*ml"],
     "max_diff_chars": 120_000,    # total diff budget sent to the model
     "chunk_chars": 40_000,        # per-request chunk size
+    "on_truncate": "fail",        # "fail" = fail if any file is truncated or over budget; "pass" = pass, flagged
     "inline_comments": True,
     "max_inline_comments": 15,
     "custom_rules": [],           # list of {id, description, severity}
@@ -40,6 +41,7 @@ class Config:
     secret_paths: list[str]
     max_diff_chars: int
     chunk_chars: int
+    on_truncate: str
     inline_comments: bool
     max_inline_comments: int
     custom_rules: list[dict[str, Any]] = field(default_factory=list)
@@ -50,9 +52,15 @@ class ConfigError(ValueError):
 
 
 def load_config(path: str | Path | None = None, overrides: dict[str, Any] | None = None) -> Config:
+    text = Path(path).read_text() if path and Path(path).exists() else None
+    return parse_config(text, overrides)
+
+
+def parse_config(text: str | None, overrides: dict[str, Any] | None = None) -> Config:
+    """Build a Config from .pr-gate.yml text. None means the file is absent: use defaults."""
     data = copy.deepcopy(DEFAULTS)
-    if path and Path(path).exists():
-        loaded = yaml.safe_load(Path(path).read_text()) or {}
+    if text is not None:
+        loaded = yaml.safe_load(text) or {}
         if not isinstance(loaded, dict):
             raise ConfigError(".pr-gate.yml must be a mapping")
         # ignore_paths extends the defaults rather than replacing them
@@ -78,6 +86,8 @@ def _validate(d: dict[str, Any]) -> None:
         raise ConfigError(f"fail_on must be one of {SEVERITIES + ['none']}")
     if d["on_error"] not in ("open", "closed"):
         raise ConfigError("on_error must be 'open' or 'closed'")
+    if d["on_truncate"] not in ("fail", "pass"):
+        raise ConfigError("on_truncate must be 'fail' or 'pass'")
     for sev in d["max_findings"]:
         if sev not in SEVERITIES:
             raise ConfigError(f"max_findings key {sev!r} is not a severity")

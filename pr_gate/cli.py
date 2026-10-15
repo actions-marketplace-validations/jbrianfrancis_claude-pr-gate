@@ -5,11 +5,11 @@ import argparse
 import os
 import sys
 
-from .config import load_config
+from .config import parse_config
 from .diff import chunk, filter_files, parse_diff
 from .gate import decide, render_summary
 from .platforms import Bitbucket, GitHub, Local
-from .review import Usage, review_chunks
+from .review import ModelOutputError, Usage, review_chunks
 
 
 def make_platform(name: str, args):
@@ -29,15 +29,18 @@ def run(platform, cfg, api_key: str, caller=None) -> int:
         res = filter_files(files, cfg.ignore_paths, cfg.secret_paths)
         skipped, redactions = res.skipped, res.redactions
         chunks, truncated = chunk(res.files, cfg.chunk_chars, cfg.max_diff_chars)
+        truncated = list(dict.fromkeys(truncated))  # a file can be both truncated and over budget
         if chunks:
             kw = {"caller": caller} if caller else {}
             findings, usage = review_chunks(cfg, chunks, api_key, **kw)
         # keep inline comments only on lines actually added in this PR
         added = {f.path: f.added_lines for f in res.files}
-        passed, reasons = decide(cfg, findings)
+        passed, reasons = decide(cfg, findings, truncated)
     except Exception as e:  # noqa: BLE001 - gate policy decides what an error means
         error = f"{type(e).__name__}: {e}"
-        passed, reasons, added = cfg.on_error == "open", [], {}
+        # A diff can steer the model into a non-JSON reply, so that always fails, whatever on_error says.
+        passed = cfg.on_error == "open" and not isinstance(e, ModelOutputError)
+        reasons, added = [], {}
 
     body = render_summary(cfg, passed, reasons, findings, skipped, truncated, usage, redactions, error)
     platform.post_summary(body)
@@ -48,6 +51,8 @@ def run(platform, cfg, api_key: str, caller=None) -> int:
         except Exception as e:  # inline comments are best-effort
             print(f"warning: inline comments failed: {e}", file=sys.stderr)
     desc = "PASS" if passed else ("FAIL: " + "; ".join(reasons) if reasons else "FAIL: gate error")
+    if passed and truncated and error is None:
+        desc = f"PASS, but {len(truncated)} file(s) truncated and not fully reviewed (on_truncate: pass)"
     platform.set_status(passed, desc)
     return 0 if passed else 1
 
@@ -60,8 +65,11 @@ def main(argv=None) -> int:
     p.add_argument("--diff-file", help="local mode: review this diff file")
     p.add_argument("--base", help="local mode: git base ref (default origin/main)")
     args = p.parse_args(argv)
-    cfg = load_config(args.config, {"model": args.model or os.environ.get("PR_GATE_MODEL")})
-    return run(make_platform(args.platform, args), cfg, os.environ.get("ANTHROPIC_API_KEY", ""))
+    platform = make_platform(args.platform, args)
+    # Rules come from the PR's base commit, never its head, so a PR cannot loosen its own gate.
+    cfg = parse_config(platform.read_base_file(args.config),
+                       {"model": args.model or os.environ.get("PR_GATE_MODEL")})
+    return run(platform, cfg, os.environ.get("ANTHROPIC_API_KEY", ""))
 
 
 if __name__ == "__main__":

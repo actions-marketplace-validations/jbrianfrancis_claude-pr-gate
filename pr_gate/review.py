@@ -76,22 +76,37 @@ def call_anthropic(api_key: str, model: str, max_tokens: int, system: str, user:
     raise RuntimeError(f"Anthropic API failed after {retries} attempts: {last}")
 
 
+class ModelOutputError(ValueError):
+    """The model did not reply with the findings JSON we asked for."""
+
+
 def parse_findings(text: str) -> list[Finding]:
     m = re.search(r"\{.*\}", text, re.S)
     if not m:
-        raise ValueError("model response contained no JSON")
-    data = json.loads(m.group(0))
+        raise ModelOutputError("model response contained no JSON")
+    try:
+        data = json.loads(m.group(0))
+    except json.JSONDecodeError as e:
+        raise ModelOutputError(f"model response was not valid JSON: {e}") from e
+    if not isinstance(data, dict) or not isinstance(data.get("findings"), list) \
+            or not all(isinstance(f, dict) for f in data["findings"]):
+        raise ModelOutputError("model response JSON has no valid 'findings' list")
     out = []
-    for f in data.get("findings", []):
+    for f in data["findings"]:
         sev = str(f.get("severity", "info")).lower()
         if sev not in SEVERITIES:
             sev = "info"
         line = f.get("line")
+        if not all(isinstance(f.get(k), (str, type(None))) for k in ("path", "rule")):
+            raise ModelOutputError("model response has a finding with a non-string path or rule")
+        try:
+            line = int(line) if isinstance(line, (int, float)) or (isinstance(line, str) and line.isdigit()) else None
+        except (ValueError, OverflowError) as e:   # NaN / Infinity
+            raise ModelOutputError(f"model response has a finding with a bad line number: {e}") from e
         out.append(Finding(
             severity=sev, category=str(f.get("category", "quality")),
             title=str(f.get("title", "")).strip()[:200], detail=str(f.get("detail", "")).strip(),
-            path=f.get("path"), line=int(line) if isinstance(line, (int, float)) or (isinstance(line, str) and line.isdigit()) else None,
-            rule=f.get("rule"),
+            path=f.get("path"), line=line, rule=f.get("rule"),
         ))
     return out
 

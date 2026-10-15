@@ -15,9 +15,9 @@ Small teams merge fast. Human reviewers skim large diffs, miss the SQL built wit
 - Fetches the PR diff and reviews only changed lines for **security** and **quality** issues, plus your **custom rules**
 - Posts **one** summary comment (updated in place on each push, not spammed) and optional **inline comments** on added lines
 - Sets a **PASS/FAIL** commit status (`claude-pr-gate`) that you can make a required check
-- Handles **large diffs**: groups files into chunks, truncates oversized files, and enforces a total budget. Anything not fully reviewed is listed in the comment
+- Handles **large diffs**: groups files into chunks, truncates oversized files, and enforces a total budget. If anything is not fully reviewed, the gate **fails** by default and says so in the comment's first line and the status
 - **Skips binaries**, never sends `.env`, keys, certs or credential files, and **redacts secret-looking strings** (AWS, GitHub, Slack, Anthropic keys, private keys) before anything leaves the runner
-- **Fail-open or fail-closed** when the API is down or the key is missing, your choice
+- **Fails closed** by default when the API is down, the key is missing, or the model reply is not valid JSON. You can opt into fail-open for infrastructure errors; an unparseable model reply always fails
 - No SDK dependencies: Python stdlib plus PyYAML
 
 ## 2-minute setup (GitHub)
@@ -39,13 +39,12 @@ jobs:
     if: github.event.pull_request.head.repo.full_name == github.repository  # forks get no secrets
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
       - uses: jbrianfrancis/claude-pr-gate@v1.3
         with:
           anthropic-api-key: ${{ secrets.ANTHROPIC_API_KEY }}
 ```
 
-3. Optional: copy [`.pr-gate.yml`](.pr-gate.yml) into your repo and edit the rules.
+3. Optional: copy [`.pr-gate.yml`](.pr-gate.yml) into your repo and edit the rules. The gate reads it from the PR's **base** commit, so a PR that edits `.pr-gate.yml` cannot change its own gate. Rule changes apply to PRs opened after they merge.
 4. Optional: in branch protection, make `claude-pr-gate` a required status check.
 
 ### Bitbucket
@@ -63,20 +62,21 @@ python -m pr_gate --platform local --base origin/main   # review your current br
 
 ## Config reference (`.pr-gate.yml`)
 
-All keys are optional.
+All keys are optional. The file is read from the PR's base commit (GitHub: `pull_request.base.sha`; Bitbucket: the destination branch; local: `--base`). If the base has no `.pr-gate.yml`, the defaults apply.
 
 | Key | Default | Meaning |
 |---|---|---|
 | `model` | `claude-sonnet-5-5` | Anthropic model id. The action input `model` or env `PR_GATE_MODEL` overrides it |
 | `fail_on` | `high` | Lowest severity that fails the gate: `info` `low` `medium` `high` `critical`, or `none` |
 | `max_findings` | `{}` | Per-severity count limits, e.g. `{medium: 5}` fails on the 6th medium |
-| `on_error` | `open` | If the gate itself errors: `open` passes (and says so), `closed` fails |
+| `on_error` | `closed` | If the gate itself errors (API down, missing key): `closed` fails, `open` passes (and says so). An unparseable or non-JSON model reply always fails |
 | `categories` | `[security, quality]` | What the reviewer looks for |
 | `custom_rules` | `[]` | List of `{id, description, severity}`. Violations are reported under the rule id at your severity |
 | `ignore_paths` | lockfiles, `dist/`, `vendor/`, `*.min.js` | Globs **added** to the defaults; matched files are not reviewed |
 | `secret_paths` | `.env*`, `*.pem`, `*.key`, `id_rsa*`, `*.p12`, `*.pfx`, `credentials*`, `secrets*.yml` | Globs **added** to the defaults; matched files are never sent |
-| `max_diff_chars` | `120000` | Total diff budget per PR (≈30K tokens). Files beyond it are listed as not reviewed |
+| `max_diff_chars` | `120000` | Total diff budget per PR (≈30K tokens). Files beyond it are not reviewed |
 | `chunk_chars` | `40000` | Max characters per API request. Bigger files are truncated |
+| `on_truncate` | `fail` | If any file is truncated or over budget: `fail` fails the gate, `pass` passes. Both flag it in the comment's first line and the status |
 | `inline_comments` | `true` | Post inline review comments on added lines |
 | `max_inline_comments` | `15` | Cap on inline comments |
 | `max_tokens` | `4096` | Max output tokens per request |
